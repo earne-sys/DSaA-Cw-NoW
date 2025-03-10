@@ -1,0 +1,27 @@
+public class QuestionTwo {
+    public static int getSecondSmallest(int[] arr) throws NoAnswerException {
+        if (arr.length < 2) {
+            throw new NoAnswerException("Not enough elements to find the second smallest.");
+        }
+        int smallest = Integer.MAX_VALUE, secondSmallest = Integer.MAX_VALUE;
+        for (int num : arr) {
+            if (num < smallest) { // eğer yeni gelen sayı(num) dizinin en küçüğünden küçükse, en küçük sayı artık num'dır, smalletstta second smallesttır
+                secondSmallest = smallest;
+                smallest = num;
+            } else if (num > smallest && num < secondSmallest) {
+                secondSmallest = num;
+            }
+        }
+        if (secondSmallest == Integer.MAX_VALUE) {
+            throw new NoAnswerException("No valid second smallest element found.");
+        }
+        return secondSmallest;
+    }
+
+    // Custom Exception for Task 2
+    static class NoAnswerException extends Exception {
+        public NoAnswerException(String message) {
+            super(message);
+        }
+    }
+}

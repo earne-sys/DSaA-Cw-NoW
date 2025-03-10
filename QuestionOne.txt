@@ -1,0 +1,10 @@
+public class QuestionOne {
+    public static int[] nextPascalLine(int[] prevLine) {
+        int[] nextLine = new int[prevLine.length + 1];
+        nextLine[0] = nextLine[nextLine.length - 1] = 1;
+        for (int i = 1; i < prevLine.length; i++) {
+            nextLine[i] = prevLine[i - 1] + prevLine[i];
+        }
+        return nextLine;
+    }
+}
