@@ -1,0 +1,178 @@
+-- Task 3a: Insert 10 more sample addresses
+
+INSERT INTO address (adr_no, city, street, house_no, post_code, country)
+VALUES (99001, 'Wroclaw', 'Wystawowa', '1', '51-618', 'Poland');
+ 
+INSERT INTO address (adr_no, city, street, house_no, post_code, country)
+VALUES (99002, 'Krakow', 'Florianska', '15', '31-021', 'Poland');
+ 
+INSERT INTO address (adr_no, city, street, house_no, post_code, country)
+VALUES (99003, 'Warszawa', 'Marszalkowska', '42', '00-044', 'Poland');
+ 
+INSERT INTO address (adr_no, city, street, house_no, post_code, country)
+VALUES (99004, 'Gdansk', 'Dluga', '88', '80-831', 'Poland');
+ 
+INSERT INTO address (adr_no, city, street, house_no, post_code, country)
+VALUES (99005, 'Poznan', 'Sw. Marcin', '24', '61-803', 'Poland');
+ 
+INSERT INTO address (adr_no, city, street, house_no, post_code, country)
+VALUES (99006, 'Lodz', 'Piotrkowska', '120', '90-006', 'Poland');
+ 
+INSERT INTO address (adr_no, city, street, house_no, post_code, country)
+VALUES (99007, 'Katowice', 'Mariacka', '7', '40-014', 'Poland');
+ 
+INSERT INTO address (adr_no, city, street, house_no, post_code, country)
+VALUES (99008, 'Lublin', 'Krakowskie Przedmiescie', '33', '20-002', 'Poland');
+ 
+INSERT INTO address (adr_no, city, street, house_no, post_code, country)
+VALUES (99009, 'Szczecin', 'Aleja Papieza Jana Pawla II', '5', '70-413', 'Poland');
+ 
+INSERT INTO address (adr_no, city, street, house_no, post_code, country)
+VALUES (99010, 'Bydgoszcz', 'Dluga', '60', '85-034', 'Poland');
+ 
+-- Verify:
+SELECT * FROM address WHERE adr_no >= 99001 AND adr_no <= 99010;
+
+
+-- Exercise 3 - Task 3b (FIXED): Insert address-employee assignments
+-- Type 'P' (Permanent) assignments:
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10001, 99001, 'P');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10002, 99002, 'P');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10003, 99003, 'P');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10004, 99004, 'P');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10005, 99005, 'P');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10006, 99006, 'P');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10007, 99007, 'P');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10008, 99008, 'P');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10009, 99009, 'P');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10010, 99010, 'P');
+ 
+-- Type 'T' (Temporary) assignments - DIFFERENT employees for same addresses:
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10011, 99001, 'T');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10012, 99002, 'T');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10013, 99003, 'T');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10014, 99004, 'T');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10015, 99005, 'T');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10016, 99006, 'T');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10017, 99007, 'T');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10018, 99008, 'T');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10019, 99009, 'T');
+INSERT INTO adr_emp (emp_no, adr_no, adr_type) VALUES (10020, 99010, 'T');
+ 
+-- Verify:
+SELECT * FROM adr_emp WHERE adr_no >= 99001 AND adr_no <= 99010;
+
+
+-- Exercise 3 - Task 4: Adjust the given addresses (Poland)
+ 
+-- 4a) Check data for addresses in Poland:
+SELECT * FROM address WHERE country = 'Poland';
+ 
+-- 4b) Update with better city and street names:
+UPDATE address 
+SET city = 'Wroclaw', street = 'Opolska'
+WHERE adr_no = 90322;
+ 
+UPDATE address 
+SET city = 'Wroclaw', street = 'Krakowska'
+WHERE adr_no = 90757;
+ 
+-- 4c) Check results:
+SELECT * FROM address WHERE country = 'Poland';
+ 
+-- 4c) Propose and do additional changes (post_code and house_no):
+UPDATE address SET post_code = '50-001' WHERE adr_no = 90322;
+UPDATE address SET post_code = '50-002' WHERE adr_no = 90757;
+UPDATE address SET house_no = '12' WHERE adr_no = 90322;
+UPDATE address SET house_no = '45' WHERE adr_no = 90757;
+ 
+-- Final verification:
+SELECT * FROM address WHERE country = 'Poland';
+
+
+-- Exercise 3 - Task 5: Update addresses and swap types
+ 
+-- 5a) Update 2 addresses with different city, street, house_no:
+UPDATE address 
+SET city = 'Opole', street = 'Krakowska', house_no = '77'
+WHERE adr_no = 99001;
+ 
+UPDATE address 
+SET city = 'Jelenia Gora', street = 'Wolnosci', house_no = '33'
+WHERE adr_no = 99002;
+ 
+-- Verify:
+SELECT * FROM address WHERE adr_no IN (99001, 99002);
+ 
+-- 5b) Exchange the type 'P' <-> 'T' for those addresses:
+-- Employee 10001 has (10001, 99001, 'P') -> change to 'T'
+-- Employee 10011 has (10011, 99001, 'T') -> change to 'P'
+-- Same for 99002
+UPDATE adr_emp 
+SET adr_type = IF(adr_type = 'P', 'T', 'P') 
+WHERE adr_no IN (99001, 99002);
+ 
+-- Verify the swap:
+SELECT * FROM adr_emp WHERE adr_no IN (99001, 99002);
+ 
+
+-- Exercise 3 - Task 6: Delete addresses
+ 
+-- 6a) Find Austrian addresses without employee assignment:
+SELECT * FROM address adr
+WHERE adr.country = 'Austria'
+AND NOT EXISTS 
+    (SELECT * FROM adr_emp ae 
+     WHERE ae.adr_no = adr.adr_no);
+ 
+-- 6b) Delete 2 of them (pick from the results above):
+DELETE FROM address
+WHERE adr_no IN (90139, 90791);
+ 
+-- 6c) Verify - run the query again:
+SELECT * FROM address adr
+WHERE adr.country = 'Austria'
+AND NOT EXISTS 
+    (SELECT * FROM adr_emp ae 
+     WHERE ae.adr_no = adr.adr_no);
+-- 90139 and 90791 should no longer appear
+ 
+
+
+
+-- Exercise 3 - Task 7: Delete with CASCADE effects
+ 
+-- ============================================
+-- 7a) Delete 2 employees - observe CASCADE
+-- ============================================
+ 
+-- Before: check assignments for employees 10003 and 10004
+SELECT * FROM adr_emp WHERE emp_no IN (10003, 10004);
+ 
+-- Delete the employees:
+DELETE FROM employees WHERE emp_no IN (10003, 10004);
+ 
+-- After: check assignments again:
+SELECT * FROM adr_emp WHERE emp_no IN (10003, 10004);
+-- RESULT: Rows are GONE! ON DELETE CASCADE automatically removed them.
+-- REASON: FOREIGN KEY (emp_no) REFERENCES employees (emp_no) ON DELETE CASCADE
+-- When the parent row (employee) is deleted, all child rows 
+-- (address assignments in adr_emp) are automatically deleted.
+ 
+ 
+-- ============================================
+-- 7b) Delete 2 addresses - observe CASCADE
+-- ============================================
+ 
+-- Before: check assignments for addresses 99005 and 99006
+SELECT * FROM adr_emp WHERE adr_no IN (99005, 99006);
+ 
+-- Delete the addresses:
+DELETE FROM address WHERE adr_no IN (99005, 99006);
+ 
+-- After: check assignments again:
+SELECT * FROM adr_emp WHERE adr_no IN (99005, 99006);
+-- RESULT: Rows are GONE! ON DELETE CASCADE automatically removed them.
+-- REASON: FOREIGN KEY (adr_no) REFERENCES address (adr_no) ON DELETE CASCADE
+-- When the parent row (address) is deleted, all employee-address 
+-- links in adr_emp are automatically deleted.
