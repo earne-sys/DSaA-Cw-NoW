@@ -1,0 +1,95 @@
+USE employees;
+
+-- 1a
+SELECT COUNT(*) FROM employees;
+
+-- 1b
+SELECT birth_date FROM employees
+WHERE emp_no = 10001;
+
+-- 1c
+SELECT first_name, last_name FROM employees
+WHERE emp_no = 10002;
+
+-- 1d
+SELECT * FROM employees
+WHERE first_name = 'Mary';
+
+-- 1e
+SELECT DISTINCT last_name
+FROM employees
+WHERE first_name = 'Mary';
+
+-- 2b
+SELECT SYSDATE() FROM dual;
+-- DUAL is a dummy table used when you want to select an expression or function result 
+-- It is useful when you want to compute something without reading from a real table
+
+-- 2c
+SELECT AVG(FLOOR(DATEDIFF(CURDATE(), birth_date) / 365))
+FROM employees;
+
+-- 3a
+SELECT
+MIN(FLOOR(DATEDIFF(CURDATE(), birth_date) / 365)) AS min_age,
+MAX(FLOOR(DATEDIFF(CURDATE(), birth_date) / 365)) AS max_age
+FROM employees;
+
+-- 3b
+SELECT
+AVG(FLOOR(DATEDIFF(CURDATE(), hire_date) / 365)) AS avg_years_worked,
+MIN(FLOOR(DATEDIFF(CURDATE(), hire_date) / 365)) AS min_years_worked,
+MAX(FLOOR(DATEDIFF(CURDATE(), hire_date) / 365)) AS max_years_worked
+FROM employees;
+
+-- 3c
+UPDATE employees
+SET birth_date = DATE_ADD(birth_date, INTERVAL 10 YEAR);
+
+-- 3d
+SELECT AVG(salary) AS avg_current_salary
+FROM salaries
+WHERE to_date = '9999-01-01';
+
+-- 3e
+SELECT COUNT(DISTINCT title) AS number_of_positions
+FROM titles;
+
+-- 3f max
+SELECT emp_no, salary/12 AS monthly_salary
+FROM salaries
+WHERE salary = (
+    SELECT MAX(salary)
+    FROM salaries
+);
+
+-- 3f min
+SELECT emp_no, salary/12 AS monthly_salary
+FROM salaries
+WHERE salary = (
+    SELECT MIN(salary)
+    FROM salaries
+);
+
+-- 3g
+SELECT
+first_name,
+last_name,
+CONCAT(LEFT(first_name, 1), '.', LEFT(last_name, 1), '.') AS initials
+FROM employees;
+
+-- 3h shortest
+SELECT *
+FROM employees
+WHERE LENGTH(last_name) = (
+    SELECT MIN(LENGTH(last_name))
+    FROM employees
+);
+
+-- 3h longest
+SELECT *
+FROM employees
+WHERE LENGTH(last_name) = (
+    SELECT MAX(LENGTH(last_name))
+    FROM employees
+);
