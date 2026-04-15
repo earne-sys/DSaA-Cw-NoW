@@ -1,0 +1,112 @@
+USE employees;
+
+-- 1.a Highest salary employee(s)
+SELECT *
+FROM employees
+WHERE emp_no IN
+(
+    SELECT emp_no
+    FROM salaries
+    WHERE salary =
+    (
+        SELECT MAX(salary)
+        FROM salaries
+    )
+);
+
+-- 1.b Current manager of department d001
+SELECT *
+FROM employees
+WHERE emp_no =
+(
+    SELECT emp_no
+    FROM dept_manager
+    WHERE dept_no = 'd001'
+      AND to_date = '9999-01-01'
+);
+
+-- 1.c Number of current employees per department
+SELECT d1.*, d2.cnt
+FROM departments d1,
+(
+    SELECT dept_no, COUNT(emp_no) AS cnt
+    FROM dept_emp
+    WHERE to_date = '9999-01-01'
+    GROUP BY dept_no
+) AS d2
+WHERE d1.dept_no = d2.dept_no
+ORDER BY cnt DESC;
+
+-- 2.b Employees who ever had salary > 60000
+SELECT COUNT(*)
+FROM employees e
+WHERE EXISTS
+(
+    SELECT 1
+    FROM salaries s
+    WHERE s.emp_no = e.emp_no
+      AND s.salary > 60000
+);
+
+-- 2.c Employees whose salary was always > 60000
+SELECT COUNT(*)
+FROM employees e
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM salaries s
+    WHERE s.emp_no = e.emp_no
+      AND s.salary <= 60000
+);
+
+-- 3.a Employees with minimal age
+SELECT *
+FROM employees
+WHERE FLOOR(DATEDIFF(CURDATE(), birth_date) / 365) =
+(
+    SELECT MIN(FLOOR(DATEDIFF(CURDATE(), birth_date) / 365))
+    FROM employees
+);
+
+-- 3.b Employees who worked only in titles containing 'Engineer'
+SELECT *
+FROM employees e
+WHERE EXISTS
+(
+    SELECT 1
+    FROM titles t
+    WHERE t.emp_no = e.emp_no
+)
+AND NOT EXISTS
+(
+    SELECT 1
+    FROM titles t
+    WHERE t.emp_no = e.emp_no
+      AND t.title NOT LIKE '%Engineer%'
+);
+
+-- 3.c Employees living in Austria
+SELECT DISTINCT e.*
+FROM employees e
+WHERE EXISTS
+(
+    SELECT 1
+    FROM adr_emp ae
+    WHERE ae.emp_no = e.emp_no
+      AND ae.adr_no IN
+      (
+          SELECT a.adr_no
+          FROM address a
+          WHERE a.country = 'Austria'
+      )
+);
+
+-- 3.d Count employees who were managers
+SELECT COUNT(*)
+FROM employees e
+WHERE EXISTS
+(
+    SELECT 1
+    FROM dept_manager dm
+    WHERE dm.emp_no = e.emp_no
+);
