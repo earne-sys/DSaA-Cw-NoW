@@ -1,0 +1,97 @@
+/* =========================================================================
+   Database Systems – Exercise 8: Outer Joins
+   Database: MySQL Employee sample
+   Author: Burak
+   Tool: MySQL Workbench
+   ========================================================================= */
+
+USE employees;
+
+/* 1a) INNER JOIN — how many employees per department? */
+SELECT d.*, COUNT(DISTINCT e.emp_no) AS emp_count
+FROM departments d
+INNER JOIN dept_emp e
+       ON d.dept_no = e.dept_no
+GROUP BY 1;
+
+/* 1b) Insert new IT department and repeat INNER JOIN. */
+INSERT IGNORE INTO departments VALUES ('d010', 'IT');
+
+SELECT d.*, COUNT(DISTINCT e.emp_no) AS emp_count
+FROM departments d
+INNER JOIN dept_emp e
+       ON d.dept_no = e.dept_no
+GROUP BY 1;
+
+/* 1c) LEFT OUTER JOIN — keeps all departments. */
+SELECT d.*, COUNT(DISTINCT e.emp_no) AS emp_count
+FROM departments d
+LEFT OUTER JOIN dept_emp e
+       ON d.dept_no = e.dept_no
+GROUP BY 1;
+
+/* 1d) RIGHT OUTER JOIN — same result as LEFT JOIN after swapping table order. */
+SELECT d.*, COUNT(DISTINCT e.emp_no) AS emp_count
+FROM dept_emp e
+RIGHT OUTER JOIN departments d
+       ON d.dept_no = e.dept_no
+GROUP BY 1;
+
+/* 2a) Current managers of all departments. */
+SELECT d.dept_no,
+       d.dept_name,
+       e.emp_no,
+       e.first_name,
+       e.last_name,
+       dm.from_date AS manager_since
+FROM departments d
+LEFT OUTER JOIN dept_manager dm
+       ON d.dept_no = dm.dept_no
+       AND dm.to_date = '9999-01-01'
+LEFT OUTER JOIN employees e
+       ON dm.emp_no = e.emp_no
+ORDER BY d.dept_no;
+
+/* 2b) Number of employees and managers per department, historically. */
+SELECT d.dept_no,
+       d.dept_name,
+       COUNT(DISTINCT de.emp_no) AS employees_count,
+       COUNT(DISTINCT dm.emp_no) AS managers_count
+FROM departments d
+LEFT OUTER JOIN dept_emp de
+       ON d.dept_no = de.dept_no
+LEFT OUTER JOIN dept_manager dm
+       ON d.dept_no = dm.dept_no
+GROUP BY d.dept_no, d.dept_name
+ORDER BY d.dept_no;
+
+/* 2b alternative) Current employees and current managers only. */
+SELECT d.dept_no,
+       d.dept_name,
+       COUNT(DISTINCT de.emp_no) AS current_employees,
+       COUNT(DISTINCT dm.emp_no) AS current_managers
+FROM departments d
+LEFT OUTER JOIN dept_emp de
+       ON d.dept_no = de.dept_no
+       AND de.to_date = '9999-01-01'
+LEFT OUTER JOIN dept_manager dm
+       ON d.dept_no = dm.dept_no
+       AND dm.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name
+ORDER BY d.dept_no;
+
+/* 2c) All departments and number of employees living in Poland. */
+SELECT d.dept_no,
+       d.dept_name,
+       COUNT(DISTINCT CASE
+           WHEN a.country = 'Poland' THEN de.emp_no
+       END) AS poland_employees
+FROM departments d
+LEFT OUTER JOIN dept_emp de
+       ON d.dept_no = de.dept_no
+LEFT OUTER JOIN adr_emp ae
+       ON de.emp_no = ae.emp_no
+LEFT OUTER JOIN address a
+       ON ae.adr_no = a.adr_no
+GROUP BY d.dept_no, d.dept_name
+ORDER BY d.dept_no;
