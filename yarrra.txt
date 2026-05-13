@@ -1,0 +1,169 @@
+USE employees;
+
+
+-- =========================================================
+-- EXERCISE 1
+-- Run the following queries and analyse the results
+-- =========================================================
+
+
+-- 1a) How many employees are currently assigned to each department
+--     and how many employees there are total?
+
+SELECT 'Total' AS department, COUNT(DISTINCT emp_no) AS employees_count
+FROM dept_emp
+WHERE to_date = '9999-01-01'
+
+UNION
+
+SELECT d.dept_name AS department, COUNT(DISTINCT e.emp_no) AS employees_count
+FROM departments d
+INNER JOIN dept_emp e
+ON d.dept_no = e.dept_no
+WHERE e.to_date = '9999-01-01'
+GROUP BY d.dept_name;
+
+
+-- 1b) How many employees there are for given salary ranges?
+
+SELECT '< 50000' AS salary_range, COUNT(DISTINCT emp_no) AS employees_count
+FROM salaries
+WHERE salary < 50000
+AND to_date = '9999-01-01'
+
+UNION
+
+SELECT '50000 <= 60000' AS salary_range, COUNT(DISTINCT emp_no) AS employees_count
+FROM salaries
+WHERE salary BETWEEN 50000 AND 60000
+AND to_date = '9999-01-01'
+
+UNION
+
+SELECT '60000 <' AS salary_range, COUNT(DISTINCT emp_no) AS employees_count
+FROM salaries
+WHERE 60000 < salary
+AND to_date = '9999-01-01';
+
+
+-- 1c) Query with UNION
+--     UNION removes duplicate rows.
+
+SELECT 'Total' AS department, COUNT(DISTINCT emp_no) AS employees_count
+FROM dept_emp
+
+UNION
+
+SELECT '----' AS department, '-----' AS employees_count
+FROM dual
+
+UNION
+
+SELECT '----' AS department, '-----' AS employees_count
+FROM dual
+
+UNION
+
+SELECT d.dept_name AS department, COUNT(DISTINCT e.emp_no) AS employees_count
+FROM departments d
+INNER JOIN dept_emp e
+ON d.dept_no = e.dept_no
+AND e.to_date = '9999-01-01'
+GROUP BY d.dept_name;
+
+
+-- 1c) Query with UNION ALL
+--     UNION ALL keeps duplicate rows.
+
+SELECT 'Total' AS department, COUNT(DISTINCT emp_no) AS employees_count
+FROM dept_emp
+
+UNION ALL
+
+SELECT '----' AS department, '-----' AS employees_count
+FROM dual
+
+UNION ALL
+
+SELECT '----' AS department, '-----' AS employees_count
+FROM dual
+
+UNION ALL
+
+SELECT d.dept_name AS department, COUNT(DISTINCT e.emp_no) AS employees_count
+FROM departments d
+INNER JOIN dept_emp e
+ON d.dept_no = e.dept_no
+AND e.to_date = '9999-01-01'
+GROUP BY d.dept_name;
+
+
+
+-- =========================================================
+-- EXERCISE 2
+-- Prepare the SQL statements with unions
+-- =========================================================
+
+
+-- 2a) Display how many employees work per each position
+--     and how many employees there are in total.
+
+SELECT 'Total' AS position, COUNT(DISTINCT emp_no) AS employees_count
+FROM titles
+WHERE to_date = '9999-01-01'
+
+UNION ALL
+
+SELECT title AS position, COUNT(DISTINCT emp_no) AS employees_count
+FROM titles
+WHERE to_date = '9999-01-01'
+GROUP BY title;
+
+
+-- 2b) How many employees are currently assigned to each department,
+--     including all departments even those without employees,
+--     and how many employees there are total?
+
+SELECT 'Total' AS department, COUNT(DISTINCT emp_no) AS employees_count
+FROM dept_emp
+WHERE to_date = '9999-01-01'
+
+UNION ALL
+
+SELECT d.dept_name AS department, COUNT(DISTINCT de.emp_no) AS employees_count
+FROM departments d
+LEFT JOIN dept_emp de
+ON d.dept_no = de.dept_no
+AND de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name;
+
+
+-- 2c) How many rows there are per each table in the database?
+
+SELECT 'employees' AS table_name, COUNT(*) AS rows_count
+FROM employees
+
+UNION ALL
+
+SELECT 'departments' AS table_name, COUNT(*) AS rows_count
+FROM departments
+
+UNION ALL
+
+SELECT 'dept_emp' AS table_name, COUNT(*) AS rows_count
+FROM dept_emp
+
+UNION ALL
+
+SELECT 'dept_manager' AS table_name, COUNT(*) AS rows_count
+FROM dept_manager
+
+UNION ALL
+
+SELECT 'titles' AS table_name, COUNT(*) AS rows_count
+FROM titles
+
+UNION ALL
+
+SELECT 'salaries' AS table_name, COUNT(*) AS rows_count
+FROM salaries;
