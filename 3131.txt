@@ -1,0 +1,43 @@
+USE employees;
+
+-- 2c) How many columns there are per each table in employees database?
+
+SELECT 'employees' AS table_name, COUNT(*) AS columns_count
+FROM information_schema.columns
+WHERE table_schema = 'employees'
+AND table_name = 'employees'
+
+UNION ALL
+
+SELECT 'departments' AS table_name, COUNT(*) AS columns_count
+FROM information_schema.columns
+WHERE table_schema = 'employees'
+AND table_name = 'departments'
+
+UNION ALL
+
+SELECT 'dept_emp' AS table_name, COUNT(*) AS columns_count
+FROM information_schema.columns
+WHERE table_schema = 'employees'
+AND table_name = 'dept_emp'
+
+UNION ALL
+
+SELECT 'dept_manager' AS table_name, COUNT(*) AS columns_count
+FROM information_schema.columns
+WHERE table_schema = 'employees'
+AND table_name = 'dept_manager'
+
+UNION ALL
+
+SELECT 'titles' AS table_name, COUNT(*) AS columns_count
+FROM information_schema.columns
+WHERE table_schema = 'employees'
+AND table_name = 'titles'
+
+UNION ALL
+
+SELECT 'salaries' AS table_name, COUNT(*) AS columns_count
+FROM information_schema.columns
+WHERE table_schema = 'employees'
+AND table_name = 'salaries';
