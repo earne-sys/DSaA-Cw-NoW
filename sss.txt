@@ -1,0 +1,46 @@
+USE employees;
+
+-- 2b) How many currently assigned employees are in each age range
+--     and how many employees there are total?
+
+SELECT 'Total' AS age_range, COUNT(DISTINCT e.emp_no) AS employees_count
+FROM employees e
+INNER JOIN dept_emp de
+ON e.emp_no = de.emp_no
+WHERE de.to_date = '9999-01-01'
+
+UNION ALL
+
+SELECT '< 30' AS age_range, COUNT(DISTINCT e.emp_no) AS employees_count
+FROM employees e
+INNER JOIN dept_emp de
+ON e.emp_no = de.emp_no
+WHERE de.to_date = '9999-01-01'
+AND FLOOR(DATEDIFF(CURDATE(), e.birth_date) / 365) < 30
+
+UNION ALL
+
+SELECT '30 - 40' AS age_range, COUNT(DISTINCT e.emp_no) AS employees_count
+FROM employees e
+INNER JOIN dept_emp de
+ON e.emp_no = de.emp_no
+WHERE de.to_date = '9999-01-01'
+AND FLOOR(DATEDIFF(CURDATE(), e.birth_date) / 365) BETWEEN 30 AND 40
+
+UNION ALL
+
+SELECT '41 - 49' AS age_range, COUNT(DISTINCT e.emp_no) AS employees_count
+FROM employees e
+INNER JOIN dept_emp de
+ON e.emp_no = de.emp_no
+WHERE de.to_date = '9999-01-01'
+AND FLOOR(DATEDIFF(CURDATE(), e.birth_date) / 365) BETWEEN 41 AND 49
+
+UNION ALL
+
+SELECT '50+' AS age_range, COUNT(DISTINCT e.emp_no) AS employees_count
+FROM employees e
+INNER JOIN dept_emp de
+ON e.emp_no = de.emp_no
+WHERE de.to_date = '9999-01-01'
+AND FLOOR(DATEDIFF(CURDATE(), e.birth_date) / 365) >= 50;
