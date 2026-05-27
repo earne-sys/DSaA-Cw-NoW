@@ -1,0 +1,167 @@
+USE employees;
+
+-- =========================================================
+-- EXERCISE 10 - TASK 1
+-- Sample views: current assignment of employee to department
+-- =========================================================
+
+CREATE OR REPLACE VIEW dept_emp_latest_date AS
+SELECT 
+    dept_emp.emp_no AS emp_no,
+    MAX(dept_emp.from_date) AS from_date,
+    MAX(dept_emp.to_date) AS to_date
+FROM dept_emp
+GROUP BY dept_emp.emp_no;
+
+CREATE OR REPLACE VIEW current_dept_emp AS
+SELECT 
+    l.emp_no AS emp_no,
+    d.dept_no AS dept_no,
+    l.from_date AS from_date,
+    l.to_date AS to_date
+FROM dept_emp d
+INNER JOIN dept_emp_latest_date l
+    ON d.emp_no = l.emp_no
+   AND d.from_date = l.from_date
+   AND d.to_date = l.to_date;
+
+-- Observe results
+SELECT * FROM dept_emp_latest_date LIMIT 10;
+SELECT * FROM current_dept_emp LIMIT 10;
+
+
+-- =========================================================
+-- EXERCISE 10 - TASK 2a
+-- Employee with maximal and minimal salary per each department
+-- View has employee salary in department
+-- =========================================================
+
+CREATE OR REPLACE VIEW v_dept_emp_salary AS
+SELECT
+    d.dept_no,
+    d.dept_name,
+    e.emp_no,
+    e.first_name,
+    e.last_name,
+    s.salary
+FROM current_dept_emp cde
+INNER JOIN departments d
+    ON cde.dept_no = d.dept_no
+INNER JOIN employees e
+    ON cde.emp_no = e.emp_no
+INNER JOIN salaries s
+    ON e.emp_no = s.emp_no
+WHERE cde.to_date = '9999-01-01'
+  AND s.to_date = '9999-01-01';
+
+-- Reuse the view to find MIN and MAX salary employees per department
+SELECT
+    CASE
+        WHEN v.salary = m.max_salary THEN 'MAX salary'
+        WHEN v.salary = m.min_salary THEN 'MIN salary'
+    END AS salary_type,
+    v.dept_no,
+    v.dept_name,
+    v.emp_no,
+    v.first_name,
+    v.last_name,
+    v.salary
+FROM v_dept_emp_salary v
+INNER JOIN (
+    SELECT
+        dept_no,
+        MIN(salary) AS min_salary,
+        MAX(salary) AS max_salary
+    FROM v_dept_emp_salary
+    GROUP BY dept_no
+) m
+    ON v.dept_no = m.dept_no
+   AND (v.salary = m.min_salary OR v.salary = m.max_salary)
+ORDER BY v.dept_no, salary_type, v.salary DESC;
+
+
+-- =========================================================
+-- EXERCISE 10 - TASK 2b
+-- Employees with positions who work only on positions containing 'Engineer'
+-- View has employees with their positions
+-- =========================================================
+
+CREATE OR REPLACE VIEW v_emp_positions AS
+SELECT
+    e.emp_no,
+    e.first_name,
+    e.last_name,
+    e.gender,
+    t.title,
+    t.from_date,
+    t.to_date
+FROM employees e
+INNER JOIN titles t
+    ON e.emp_no = t.emp_no;
+
+-- Strict version:
+-- employee is selected only if ALL his/her titles contain 'Engineer'
+SELECT
+    v.emp_no,
+    v.first_name,
+    v.last_name,
+    v.gender,
+    v.title,
+    v.from_date,
+    v.to_date
+FROM v_emp_positions v
+WHERE v.emp_no NOT IN (
+    SELECT emp_no
+    FROM v_emp_positions
+    WHERE title NOT LIKE '%Engineer%'
+)
+ORDER BY v.emp_no, v.from_date;
+
+
+-- =========================================================
+-- EXERCISE 10 - TASK 2c
+-- Employees who worked in department d003 and are living in Austria
+-- View has employees with their addresses
+-- =========================================================
+
+CREATE OR REPLACE VIEW v_emp_addresses AS
+SELECT
+    e.emp_no,
+    e.first_name,
+    e.last_name,
+    e.gender,
+    ae.adr_type,
+    a.adr_no,
+    a.city,
+    a.street,
+    a.house_no,
+    a.post_code,
+    a.country
+FROM employees e
+INNER JOIN adr_emp ae
+    ON e.emp_no = ae.emp_no
+INNER JOIN address a
+    ON ae.adr_no = a.adr_no;
+
+-- Reuse the view to find employees who worked in d003 and live in Austria
+SELECT DISTINCT
+    vea.emp_no,
+    vea.first_name,
+    vea.last_name,
+    vea.gender,
+    de.dept_no,
+    de.from_date AS dept_from_date,
+    de.to_date AS dept_to_date,
+    vea.adr_type,
+    vea.adr_no,
+    vea.city,
+    vea.street,
+    vea.house_no,
+    vea.post_code,
+    vea.country
+FROM v_emp_addresses vea
+INNER JOIN dept_emp de
+    ON vea.emp_no = de.emp_no
+WHERE de.dept_no = 'd003'
+  AND vea.country = 'Austria'
+ORDER BY vea.emp_no, vea.adr_type;
