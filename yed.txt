@@ -1,0 +1,65 @@
+USE employees;
+
+-- =========================================================
+-- TASK 1
+-- Assign employee to country using address table
+-- Create a view
+-- =========================================================
+
+CREATE OR REPLACE VIEW v_emp_country AS
+SELECT
+    e.emp_no,
+    e.first_name,
+    e.last_name,
+    e.gender,
+    ae.adr_type,
+    a.adr_no,
+    a.city,
+    a.street,
+    a.house_no,
+    a.post_code,
+    a.country
+FROM employees e
+INNER JOIN adr_emp ae
+    ON e.emp_no = ae.emp_no
+INNER JOIN address a
+    ON ae.adr_no = a.adr_no;
+
+
+-- =========================================================
+-- Show / observe the view result
+-- =========================================================
+
+SELECT *
+FROM v_emp_country
+LIMIT 20;
+
+
+-- =========================================================
+-- Reuse the view:
+-- Count how many employees are assigned to each country
+-- =========================================================
+
+SELECT
+    country,
+    COUNT(DISTINCT emp_no) AS total_employees
+FROM v_emp_country
+GROUP BY country
+ORDER BY total_employees DESC;
+
+
+-- =========================================================
+-- Reuse the view:
+-- Show employees with their assigned country
+-- =========================================================
+
+SELECT
+    emp_no,
+    first_name,
+    last_name,
+    adr_type,
+    city,
+    post_code,
+    country
+FROM v_emp_country
+ORDER BY country, emp_no;
