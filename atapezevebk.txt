@@ -1,0 +1,135 @@
+USE employees;
+
+-- 3b) Count only current employees in every department branch
+
+WITH RECURSIVE branch_tree AS
+(
+    -- Root department
+    SELECT
+        o.dept_no,
+        d.dept_name,
+        o.org_no,
+        CAST(o.dept_no AS CHAR(200)) AS dept_id_path,
+        CAST(d.dept_name AS CHAR(500)) AS dept_name_path,
+        CAST(o.dept_no AS CHAR(200)) AS dept_list,
+        1 AS hierarchy_level
+    FROM dept_org o
+    INNER JOIN departments d
+        ON o.dept_no = d.dept_no
+    WHERE o.org_no IS NULL
+
+    UNION ALL
+
+    -- Child departments
+    SELECT
+        child.dept_no,
+        d.dept_name,
+        child.org_no,
+        CONCAT(parent.dept_id_path, ' -> ', child.dept_no) AS dept_id_path,
+        CONCAT(parent.dept_name_path, ' -> ', d.dept_name) AS dept_name_path,
+        CONCAT(parent.dept_list, ',', child.dept_no) AS dept_list,
+        parent.hierarchy_level + 1 AS hierarchy_level
+    FROM branch_tree parent
+    INNER JOIN dept_org child
+        ON parent.dept_no = child.org_no
+    INNER JOIN departments d
+        ON child.dept_no = d.dept_no
+)
+
+SELECT
+    dept_id_path AS department_branch_ids,
+    dept_name_path AS department_branch_names,
+    hierarchy_level,
+    COUNT(DISTINCT de.emp_no) AS current_employee_count
+FROM branch_tree bt
+LEFT JOIN dept_emp de
+    ON FIND_IN_SET(de.dept_no, bt.dept_list) > 0
+    AND de.to_date = '9999-01-01'
+GROUP BY
+    dept_id_path,
+    dept_name_path,
+    hierarchy_level
+ORDER BY
+    dept_id_path;
+	
+	USE employees;
+
+-- 3c) Display every recursive hierarchy of department managers
+
+WITH RECURSIVE manager_hierarchy AS
+(
+    -- Root department: d000
+    SELECT
+        o.dept_no,
+        d.dept_name,
+        o.org_no AS parent_dept_no,
+        1 AS hierarchy_level,
+
+        CAST(o.dept_no AS CHAR(500)) AS department_id_path,
+
+        CAST(d.dept_name AS CHAR(1000)) AS department_name_path,
+
+        CAST(
+            CONCAT(
+                d.dept_name,
+                ' / Manager: ',
+                COALESCE(CONCAT(e.first_name, ' ', e.last_name), 'No current manager')
+            )
+            AS CHAR(2000)
+        ) AS manager_path
+
+    FROM dept_org o
+    INNER JOIN departments d
+        ON o.dept_no = d.dept_no
+    LEFT JOIN dept_manager dm
+        ON o.dept_no = dm.dept_no
+        AND dm.to_date = '9999-01-01'
+    LEFT JOIN employees e
+        ON dm.emp_no = e.emp_no
+    WHERE o.org_no IS NULL
+
+
+    UNION ALL
+
+
+    -- Recursive part: child departments
+    SELECT
+        child.dept_no,
+        d.dept_name,
+        child.org_no AS parent_dept_no,
+        parent.hierarchy_level + 1 AS hierarchy_level,
+
+        CONCAT(parent.department_id_path, ' -> ', child.dept_no) AS department_id_path,
+
+        CONCAT(parent.department_name_path, ' -> ', d.dept_name) AS department_name_path,
+
+        CONCAT(
+            parent.manager_path,
+            ' -> ',
+            d.dept_name,
+            ' / Manager: ',
+            COALESCE(CONCAT(e.first_name, ' ', e.last_name), 'No current manager')
+        ) AS manager_path
+
+    FROM manager_hierarchy parent
+    INNER JOIN dept_org child
+        ON parent.dept_no = child.org_no
+    INNER JOIN departments d
+        ON child.dept_no = d.dept_no
+    LEFT JOIN dept_manager dm
+        ON child.dept_no = dm.dept_no
+        AND dm.to_date = '9999-01-01'
+    LEFT JOIN employees e
+        ON dm.emp_no = e.emp_no
+)
+
+SELECT
+    dept_no,
+    dept_name,
+    parent_dept_no,
+    hierarchy_level,
+    department_id_path,
+    department_name_path,
+    manager_path
+FROM manager_hierarchy
+ORDER BY department_id_path;
