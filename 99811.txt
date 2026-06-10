@@ -1,0 +1,111 @@
+-- ============================================================
+-- 3a) LOGGING CHANGES ON DEPARTMENT NAMES
+-- Logs old department name, new department name,
+-- and MySQL user who made the change.
+-- ============================================================
+
+DROP TRIGGER IF EXISTS department_name_log;
+DROP TABLE IF EXISTS departments_log;
+
+CREATE TABLE departments_log (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    dept_no CHAR(4) NOT NULL,
+    old_dept_name VARCHAR(40) NOT NULL,
+    new_dept_name VARCHAR(40) NOT NULL,
+    changed_by VARCHAR(100) NOT NULL,
+    changetime TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DELIMITER $$
+
+CREATE TRIGGER department_name_log
+AFTER UPDATE ON departments
+FOR EACH ROW
+BEGIN
+    IF OLD.dept_name <> NEW.dept_name THEN
+        INSERT INTO departments_log
+            (dept_no, old_dept_name, new_dept_name, changed_by)
+        VALUES
+            (OLD.dept_no, OLD.dept_name, NEW.dept_name, USER());
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- test
+-- Change department name
+UPDATE departments
+SET dept_name = 'Customer Support'
+WHERE dept_no = 'd009';
+
+-- Show the log
+SELECT *
+FROM departments_log;
+
+-- Change it back
+UPDATE departments
+SET dept_name = 'Customer Service'
+WHERE dept_no = 'd009';
+
+-- Show the log again
+SELECT *
+FROM departments_log;
+
+
+
+-- ============================================================
+-- 3b) CHECK HIRE DATE
+-- Reject inserting or updating an employee
+-- if hire_date is before birth_date + 21 years.
+-- ============================================================
+
+DROP TRIGGER IF EXISTS employee_hire_date_check_insert;
+DROP TRIGGER IF EXISTS employee_hire_date_check_update;
+
+DELIMITER $$
+
+CREATE TRIGGER employee_hire_date_check_insert
+BEFORE INSERT ON employees
+FOR EACH ROW
+BEGIN
+    IF NEW.hire_date < DATE_ADD(NEW.birth_date, INTERVAL 21 YEAR) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Employee must be at least 21 years old at hire date!';
+    END IF;
+END$$
+
+CREATE TRIGGER employee_hire_date_check_update
+BEFORE UPDATE ON employees
+FOR EACH ROW
+BEGIN
+    IF NEW.hire_date < DATE_ADD(NEW.birth_date, INTERVAL 21 YEAR) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Employee must be at least 21 years old at hire date!';
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- Test with correct insert:
+-- This should work because employee is 22 years old at hire date.
+
+INSERT INTO employees
+VALUES (999996, '2000-01-01', 'Valid', 'Worker', 'F', '2022-01-01');
+
+SELECT *
+FROM employees
+WHERE emp_no = 999996;
+
+Test with wrong insert:
+-- This should give error because employee is only 20 years old at hire date.
+
+INSERT INTO employees
+VALUES (999998, '2005-01-01', 'Too', 'Young', 'M', '2025-01-01');
+
+Test with wrong update:
+-- This should give error because hire date becomes before birth date + 21 years.
+
+UPDATE employees
+SET hire_date = '2020-01-01'
+WHERE emp_no = 999996;
+
