@@ -1,0 +1,120 @@
+USE employees;
+
+-- ============================================================
+-- CLEAN OLD TRIGGERS AND LOG TABLE
+-- ============================================================
+
+DROP TRIGGER IF EXISTS salary_ok;
+DROP TRIGGER IF EXISTS salary_update_ok;
+DROP TRIGGER IF EXISTS salary_log;
+
+DROP TABLE IF EXISTS salaries_log;
+
+
+-- ============================================================
+-- 2a) CHECK SALARY BEFORE INSERT
+-- Prevent salary values equal to 0 or below 0.
+-- ============================================================
+
+DELIMITER $$
+
+CREATE TRIGGER salary_ok
+BEFORE INSERT ON salaries
+FOR EACH ROW
+BEGIN
+    IF NEW.salary <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Salary must be greater than 0!';
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+-- ============================================================
+-- 2b) SALARY LOG TABLE
+-- Also prevent updating salary to 0 or below 0.
+-- Then log old salary after update.
+-- ============================================================
+
+CREATE TABLE salaries_log (
+    emp_no INT NOT NULL,
+    old_salary INT NOT NULL,
+    new_salary INT NOT NULL,
+    changetime TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DELIMITER $$
+
+CREATE TRIGGER salary_update_ok
+BEFORE UPDATE ON salaries
+FOR EACH ROW
+BEGIN
+    IF NEW.salary <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Salary must be greater than 0!';
+    END IF;
+END$$
+
+CREATE TRIGGER salary_log
+AFTER UPDATE ON salaries
+FOR EACH ROW
+BEGIN
+    INSERT INTO salaries_log (emp_no, old_salary, new_salary)
+    VALUES (NEW.emp_no, OLD.salary, NEW.salary);
+END$$
+
+DELIMITER ;
+
+
+-- ============================================================
+-- TEST 2a - WRONG INSERT
+-- This should give error.
+-- Run separately.
+-- ============================================================
+
+/*
+INSERT INTO salaries
+VALUES (19000, 0, '1998-01-01', '9999-12-31');
+*/
+
+/*
+INSERT INTO salaries
+VALUES (19000, -1, '1998-01-01', '9999-12-31');
+*/
+
+
+-- ============================================================
+-- TEST 2b - WRONG UPDATE
+-- This should give error.
+-- Run separately.
+-- ============================================================
+
+/*
+UPDATE salaries
+SET salary = 0
+WHERE emp_no = 19000
+  AND from_date = '1997-07-17';
+*/
+
+
+-- ============================================================
+-- TEST 2b - CORRECT UPDATE
+-- This should work and create log record.
+-- ============================================================
+
+UPDATE salaries
+SET salary = 70000
+WHERE emp_no = 19000
+  AND from_date = '1997-07-17';
+
+SELECT *
+FROM salaries_log;
+
+
+-- ============================================================
+-- SHOW CREATED TRIGGERS
+-- ============================================================
+
+SHOW TRIGGERS
+WHERE `Table` = 'salaries';
