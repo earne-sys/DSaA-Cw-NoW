@@ -1,0 +1,214 @@
+USE employees;
+
+-- 2a IS THE SALARY CORRECT?
+DELIMITER $$
+
+CREATE TRIGGER salary_ok
+BEFORE INSERT ON salaries
+FOR EACH ROW
+BEGIN
+    IF NEW.salary < 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Warning: Negative Salary!';
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- TEST FOR 2a = This should give error: Warning: Negative Salary!
+
+INSERT INTO salaries
+VALUES (19000, -1, '1998-01-01', '9999-12-31');
+
+-- To check if the trigger was created, run:
+
+SHOW TRIGGERS
+WHERE `Trigger` = 'salary_ok';
+
+
+-- 2b) THE LOG TABLE FOR SALARIES
+CREATE TABLE salaries_log (
+    emp_no INT NOT NULL,
+    salary INT NOT NULL,
+    changetime TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+);
+
+DELIMITER $$
+
+CREATE TRIGGER salary_log
+AFTER UPDATE ON salaries
+FOR EACH ROW
+BEGIN
+    INSERT INTO salaries_log (emp_no, salary)
+    VALUES (NEW.emp_no, OLD.salary);
+END$$
+
+DELIMITER ;
+
+-- TEST FOR 2b do it before UPDATE
+SELECT *
+FROM salaries
+WHERE emp_no = 19000
+ORDER BY from_date;
+
+-- Update one salary row
+UPDATE salaries
+SET salary = 70000
+WHERE emp_no = 19000
+  AND from_date = '1997-07-17';
+
+-- Show salary log
+
+SELECT *
+FROM salaries_log;
+
+
+-- 3a LOGGING CHANGES ON DEPARTMENT NAMES
+CREATE TABLE departments_log (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    dept_no CHAR(4) NOT NULL,
+    old_dept_name VARCHAR(40) NOT NULL,
+    new_dept_name VARCHAR(40) NOT NULL,
+    changetime TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DELIMITER $$
+
+CREATE TRIGGER department_name_log
+AFTER UPDATE ON departments
+FOR EACH ROW
+BEGIN
+    IF OLD.dept_name <> NEW.dept_name THEN
+        INSERT INTO departments_log
+            (dept_no, old_dept_name, new_dept_name)
+        VALUES
+            (OLD.dept_no, OLD.dept_name, NEW.dept_name);
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- TEST 3a =  Change department name
+UPDATE departments
+SET dept_name = 'Customer Support'
+WHERE dept_no = 'd009';
+
+-- Show department name changes
+
+SELECT *
+FROM departments_log;
+
+-- Change it back to original name
+
+UPDATE departments
+SET dept_name = 'Customer Service'
+WHERE dept_no = 'd009';
+
+-- Show log again
+
+SELECT *
+FROM departments_log;
+
+
+-- 3b) CHECKING HIRE DATE = Hire date must not be lower than birth date + arbitrary years.
+-- I use 16 years.
+DELIMITER $$
+
+CREATE TRIGGER employee_hire_date_check_insert
+BEFORE INSERT ON employees
+FOR EACH ROW
+BEGIN
+    IF NEW.hire_date < DATE_ADD(NEW.birth_date, INTERVAL 16 YEAR) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Hire date must be at least 16 years after birth date!';
+    END IF;
+END$$
+
+CREATE TRIGGER employee_hire_date_check_update
+BEFORE UPDATE ON employees
+FOR EACH ROW
+BEGIN
+    IF NEW.hire_date < DATE_ADD(NEW.birth_date, INTERVAL 16 YEAR) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Hire date must be at least 16 years after birth date!';
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- TEST FOR 3b - CORRECT INSERT
+-- This employee is 20 years old at hire date, so it works.
+
+INSERT INTO employees
+VALUES (999997, '2000-01-01', 'Valid', 'Worker', 'F', '2020-01-01');
+
+SELECT *
+FROM employees
+WHERE emp_no = 999997;
+
+-- TEST FOR 3b - WRONG INSERT
+-- This should give error because employee is only 10 years old at hire date.
+
+INSERT INTO employees
+VALUES (999998, '2010-01-01', 'Too', 'Young', 'M', '2020-01-01');
+
+
+-- 3c) CHECKING THAT MANAGER OF ONE DEPARTMENT
+DELIMITER $$
+
+CREATE TRIGGER manager_one_department_insert
+BEFORE INSERT ON dept_manager
+FOR EACH ROW
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM dept_manager dm
+        WHERE dm.emp_no = NEW.emp_no
+          AND dm.dept_no <> NEW.dept_no
+          AND NEW.from_date <= dm.to_date
+          AND NEW.to_date >= dm.from_date
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'This employee is already manager of another department during this period!';
+    END IF;
+END$$
+
+CREATE TRIGGER manager_one_department_update
+BEFORE UPDATE ON dept_manager
+FOR EACH ROW
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM dept_manager dm
+        WHERE dm.emp_no = NEW.emp_no
+          AND dm.dept_no <> NEW.dept_no
+          AND NOT (
+              dm.emp_no = OLD.emp_no
+              AND dm.dept_no = OLD.dept_no
+              AND dm.from_date = OLD.from_date
+          )
+          AND NEW.from_date <= dm.to_date
+          AND NEW.to_date >= dm.from_date
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'This employee is already manager of another department during this period!';
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- TEST FOR 3c - CORRECT INSERT
+-- Employee 10001 becomes manager only in one department for this period.
+
+INSERT INTO dept_manager (emp_no, dept_no, from_date, to_date)
+VALUES (10001, 'd001', '2024-01-01', '2024-12-31');
+
+SELECT *
+FROM dept_manager
+WHERE emp_no = 10001;
+
+-- TEST FOR 3c - WRONG INSERT=This should give error because employee 110039 is already manager of d001.
+
+INSERT INTO dept_manager (emp_no, dept_no, from_date, to_date)
+VALUES (110039, 'd002', '2024-01-01', '9999-01-01');
