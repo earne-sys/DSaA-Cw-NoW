@@ -1,0 +1,30 @@
+USE employees;
+
+-- 2a) Run without index
+EXPLAIN
+SELECT COUNT(*) AS employees_hired_1995
+FROM employees
+WHERE hire_date BETWEEN '1995-01-01' AND '1995-12-31';
+
+SELECT COUNT(*) AS employees_hired_1995
+FROM employees
+WHERE hire_date BETWEEN '1995-01-01' AND '1995-12-31';
+
+
+-- 2b) Create index
+CREATE INDEX idx_hire_date ON employees (hire_date);
+
+
+-- 2c) Run again with index
+EXPLAIN
+SELECT COUNT(*) AS employees_hired_1995
+FROM employees
+WHERE hire_date BETWEEN '1995-01-01' AND '1995-12-31';
+
+SELECT COUNT(*) AS employees_hired_1995
+FROM employees
+WHERE hire_date BETWEEN '1995-01-01' AND '1995-12-31';
+
+
+-- 2d) Drop index
+DROP INDEX idx_hire_date ON employees;
