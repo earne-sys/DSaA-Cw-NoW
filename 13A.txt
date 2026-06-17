@@ -1,0 +1,232 @@
+USE employees;
+
+-- =====================================================
+-- EXERCISE 13 - INDEXES
+-- =====================================================
+
+
+-- =====================================================
+-- 2. SALARY TABLE
+-- =====================================================
+
+-- 2a) Run without index and note running time
+EXPLAIN
+SELECT COUNT(*) AS salary_count
+FROM salaries
+WHERE salary BETWEEN 52000 AND 53000;
+
+SELECT COUNT(*) AS salary_count
+FROM salaries
+WHERE salary BETWEEN 52000 AND 53000;
+
+
+-- 2b) Create index on salary
+CREATE INDEX idx1 ON salaries (salary);
+
+
+-- 2c) Run again and note running time
+-- Expected: faster, because salary is used in WHERE with BETWEEN
+EXPLAIN
+SELECT COUNT(*) AS salary_count
+FROM salaries
+WHERE salary BETWEEN 52000 AND 53000;
+
+SELECT COUNT(*) AS salary_count
+FROM salaries
+WHERE salary BETWEEN 52000 AND 53000;
+
+
+-- 2d) Drop index
+DROP INDEX idx1 ON salaries;
+
+
+
+-- =====================================================
+-- 2. TITLE TABLE
+-- =====================================================
+
+-- 2e) Run without index and note running time
+EXPLAIN
+SELECT COUNT(*) AS title_count
+FROM titles
+WHERE title LIKE 'E%';
+
+SELECT COUNT(*) AS title_count
+FROM titles
+WHERE title LIKE 'E%';
+
+
+-- 2f) Create index on title
+CREATE INDEX idx1 ON titles (title);
+
+
+-- 2g) Run again and note running time
+-- Expected: faster, because LIKE 'E%' can use index
+EXPLAIN
+SELECT COUNT(*) AS title_count
+FROM titles
+WHERE title LIKE 'E%';
+
+SELECT COUNT(*) AS title_count
+FROM titles
+WHERE title LIKE 'E%';
+
+
+-- 2h) Drop index
+DROP INDEX idx1 ON titles;
+
+
+
+-- =====================================================
+-- 3. BEFORE CREATING INDEXES
+-- Run these first and note running times
+-- I use current department only: de.to_date = '9999-01-01'
+-- =====================================================
+
+-- 3a) Employees per department who were born in 1960
+EXPLAIN
+SELECT d.dept_no, d.dept_name, COUNT(*) AS employees_born_1960
+FROM employees e
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+WHERE e.birth_date BETWEEN '1960-01-01' AND '1960-12-31'
+  AND de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name
+ORDER BY d.dept_no;
+
+SELECT d.dept_no, d.dept_name, COUNT(*) AS employees_born_1960
+FROM employees e
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+WHERE e.birth_date BETWEEN '1960-01-01' AND '1960-12-31'
+  AND de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name
+ORDER BY d.dept_no;
+
+
+-- 3b) Employees per department per gender
+EXPLAIN
+SELECT d.dept_no, d.dept_name, e.gender, COUNT(*) AS employees_count
+FROM employees e
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+WHERE de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name, e.gender
+ORDER BY d.dept_no, e.gender;
+
+SELECT d.dept_no, d.dept_name, e.gender, COUNT(*) AS employees_count
+FROM employees e
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+WHERE de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name, e.gender
+ORDER BY d.dept_no, e.gender;
+
+
+-- 3c) Employees per department with last name starting with S
+EXPLAIN
+SELECT d.dept_no, d.dept_name, COUNT(*) AS last_name_s_count
+FROM employees e
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+WHERE e.last_name LIKE 'S%'
+  AND de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name
+ORDER BY d.dept_no;
+
+SELECT d.dept_no, d.dept_name, COUNT(*) AS last_name_s_count
+FROM employees e
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+WHERE e.last_name LIKE 'S%'
+  AND de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name
+ORDER BY d.dept_no;
+
+
+
+-- =====================================================
+-- 3. CREATE INDEXES
+-- =====================================================
+
+CREATE INDEX idx_ex13_emp_birth_empno
+ON employees (birth_date, emp_no);
+
+CREATE INDEX idx_ex13_emp_gender_empno
+ON employees (gender, emp_no);
+
+CREATE INDEX idx_ex13_emp_lastname_empno
+ON employees (last_name, emp_no);
+
+CREATE INDEX idx_ex13_dept_emp_current_dept_emp
+ON dept_emp (to_date, dept_no, emp_no);
+
+CREATE INDEX idx_ex13_dept_emp_emp_current_dept
+ON dept_emp (emp_no, to_date, dept_no);
+
+
+
+-- =====================================================
+-- 3. AFTER CREATING INDEXES
+-- Run again and compare running times
+-- =====================================================
+
+-- 3a again
+EXPLAIN
+SELECT d.dept_no, d.dept_name, COUNT(*) AS employees_born_1960
+FROM employees e
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+WHERE e.birth_date BETWEEN '1960-01-01' AND '1960-12-31'
+  AND de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name
+ORDER BY d.dept_no;
+
+SELECT d.dept_no, d.dept_name, COUNT(*) AS employees_born_1960
+FROM employees e
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+WHERE e.birth_date BETWEEN '1960-01-01' AND '1960-12-31'
+  AND de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name
+ORDER BY d.dept_no;
+
+
+-- 3b again
+EXPLAIN
+SELECT d.dept_no, d.dept_name, e.gender, COUNT(*) AS employees_count
+FROM employees e
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+WHERE de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name, e.gender
+ORDER BY d.dept_no, e.gender;
+
+SELECT d.dept_no, d.dept_name, e.gender, COUNT(*) AS employees_count
+FROM employees e
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+WHERE de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name, e.gender
+ORDER BY d.dept_no, e.gender;
+
+
+-- 3c again
+EXPLAIN
+SELECT d.dept_no, d.dept_name, COUNT(*) AS last_name_s_count
+FROM employees e
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+WHERE e.last_name LIKE 'S%'
+  AND de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name
+ORDER BY d.dept_no;
+
+SELECT d.dept_no, d.dept_name, COUNT(*) AS last_name_s_count
+FROM employees e
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+WHERE e.last_name LIKE 'S%'
+  AND de.to_date = '9999-01-01'
+GROUP BY d.dept_no, d.dept_name
+ORDER BY d.dept_no;
